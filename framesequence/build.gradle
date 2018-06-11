@@ -1,0 +1,50 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 27
+    buildToolsVersion "27.0.3"
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 27
+        versionCode 1
+        versionName "1.0.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets {
+        main {
+            jni.srcDirs = []
+            jniLibs.srcDirs = ['src/main/libs/']
+        }
+    }
+}
+
+dependencies {
+    implementation deps.support.annotations
+    implementation deps.support.app_compat
+}
+
+// call regular ndk-build(.cmd) script from app directory
+task ndkBuild(type: Exec) {
+    String ndkDir = android.ndkDirectory
+    commandLine "$ndkDir/ndk-build", '-j8', '-C', file('src/main/jni').absolutePath
+}
+
+tasks.withType(JavaCompile) {
+    compileTask -> compileTask.dependsOn ndkBuild
+}
+task cleanExtra(type: Delete) {
+    delete 'src/main/obj'
+}
+task cleanLib(type: Delete) {
+    delete 'src/main/libs'
+}
+
+clean.dependsOn(cleanExtra)
+clean.dependsOn(cleanLib)
